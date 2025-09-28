@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: chronos-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/usr/src/app/src        # Mount local src folder → container src
+      - /usr/src/app/node_modules     # Prevent overwriting node_modules
+    command: npm run dev              # Ensure nodemon runs inside container
+    depends_on:
+      - mongo
+      - redis
+
+  worker:
+    build: .
+    container_name: chronos-worker
+    restart: unless-stopped
+    command: ["node", "src/jobs/jobWorker.js"]
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:6
+    container_name: chronos-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7
+    container_name: chronos-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo-data:
+
